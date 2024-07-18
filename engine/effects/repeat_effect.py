@@ -1,7 +1,7 @@
 from enum import Enum
 
 from ._interfaces import Effect
-from ..engine_interface import EngineInterface
+from .._interface import EngineInterface
 from ..components._interfaces import ObjectInterface
 
 from ..metrics.duration import Duration
@@ -25,11 +25,19 @@ class RepeatType(Enum):
     INDEFINETLY_EVERY_FRAME = 4
     
 class RepeatEffect(Effect):
-    def __init__(self, repeatType: RepeatType, duration: Duration):
+    def __init__(self, repeatType, duration):
         # the RepeatType of the effect
+        # vaildate 
+        if not isinstance(repeatType, RepeatType):
+            raise TypeError(f'repeatType arg should be of type RepeatType, {type(duration)} given')
+        
         self.repeatType: RepeatType = repeatType
 
         # the duration it should wait before callback
+        # validate
+        if not isinstance(duration, Duration):
+            raise TypeError(f'duration should of type Duration, {type(duration)} given')
+        
         self.duration: Duration = duration
 
         # stores the last time the effect was
@@ -45,13 +53,14 @@ class RepeatEffect(Effect):
         
         super().__init__()
 
-    def run(self, dt:float, game_engine: EngineInterface, object: 'ObjectInterface|None'):
+    def run(self, dt:float, game: EngineInterface, object: 'ObjectInterface|None'):
         # validate the arguments
         if not isinstance(dt, float):
             raise TypeError("dt must be of type float is type " + str(type(dt)))
         
-        if not isinstance(object, ObjectInterface) and object is not None:
-            raise TypeError("object must be of type Object or None")
+        if not isinstance(object, ObjectInterface):
+            if  object is not None:
+                raise TypeError("object must be of type Object or None")
 
     
     def shouldRun(self, dt:float) -> bool:

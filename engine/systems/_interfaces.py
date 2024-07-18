@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from ..engine_interface import EngineInterface
+from .._interface import EngineInterface
 
 from ..components._interfaces import ObjectInterface
 
@@ -9,7 +9,7 @@ class EngineSystem(ABC):
         self.game_engine: EngineInterface = game_engine
 
     @abstractmethod
-    def run(self, dt: float):
+    def run(self):
         pass
 
 class ObjectSystem(ABC):
@@ -17,5 +17,5 @@ class ObjectSystem(ABC):
         self.game_engine: EngineInterface = game_engine
 
     @abstractmethod
-    def run(self, dt: float, object: ObjectInterface):
+    def run(self, object: ObjectInterface):
         pass

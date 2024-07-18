@@ -48,27 +48,32 @@ class FrameBuffer:
         '''
         # print('======ADDING LINES TO BUFFER======')
         # print('LINES BEING ADDED TO BUFFER', lines)
-        print(f'BUFFER BEFORE ADDING LINES: {self._buffer}')
+        # print(f'BUFFER BEFORE ADDING LINES: {self._buffer}')
         # iterate through the lines
         for i in range(len(lines)):
             line: str = lines[i]
-
-            print(f'LINE BEING ADDED TO BUFFER [{line}]')
+            # print(f'LINE BEING ADDED TO BUFFER [{line}]')
 
             # get the position of the line
             # the first line starts at top left
             # the next below it
             line_pos: Vec2 = Vec2(pos.x, pos.y + i)
 
-            print(f'LINE"S POS: {line_pos}')  
-            print(f'BUFFER SIZE {len(self._buffer)}')
-            print(f'SELF SIZE {self.size}')          
-            
-            # if the line is empty, leave
-            # if line_pos.y >= len(self._buffer): continue
-
-            # get the line in _buffer that the newline updates
-            buffer_line_chars: list[str] = self._buffer[line_pos.y]
+            try:
+                # get the line in _buffer that the newline updates
+                buffer_line_chars: list[str] = self._buffer[line_pos.y]
+            except IndexError:
+                print(f'ERROR: ')
+                print(f'While Adding the {i}th Line =>{line}<= to Buffer')
+                print(f'LOCAL POS [{line_pos.y}], is trys to occupy, IS OUTSIDE LOCAL BUFFER"S BOUNDS [{self.size.y}]')
+                print(f'')
+                raise IndexError(
+                    f'''
+                        ERROR:
+                            While Adding the {i}th Line =>{line}<= to Buffer
+                            LOCAL POS [{line_pos.y}], is trys to occupy, IS OUTSIDE LOCAL BUFFER"S BOUNDS [{self.size.y}]
+                    '''
+                )
 
             # update the line_chars/line_pixels
             first_part = np.array(buffer_line_chars[0:line_pos.x])
@@ -85,7 +90,7 @@ class FrameBuffer:
 
             # print('NEW LINE', self._buffer[line_pos.y])
 
-            print('NEW BUFFER AFER LINE', self._buffer)
+            # print('NEW BUFFER AFER LINE', self._buffer)
 
 
 
@@ -96,14 +101,14 @@ class FrameBuffer:
         # get the width the drawing is trying to occupy
         # max_width of drawing plus its x offset
         drawing_space_width: int = drawing.maxWidth
-        print('DRAWING SPACE WIDTH', drawing.maxWidth, drawing.local_pos.x)
+        # print('DRAWING SPACE WIDTH', drawing.maxWidth, drawing.local_pos.x)
 
         # get the height the drawing is trying to occupy
         # max_height of drawing plus its y offset
         drawing_space_height: int = drawing.maxHeight
-        print('DRAWING SPACE HEIGHT', drawing.maxHeight, drawing.local_pos.y)
+        # print('DRAWING SPACE HEIGHT', drawing.maxHeight, drawing.local_pos.y)
 
-        print(f'DRAWING PANEL SIZE {self.size.x}, {self.size.y}')
+        # print(f'DRAWING PANEL SIZE {self.size.x}, {self.size.y}')
 
         # validate that the line does not exceed the width of the frame buffer
         if drawing_space_width > self.size.x or drawing_space_height > self.size.y:
@@ -116,8 +121,8 @@ class FrameBuffer:
         - Adds the lines of the drawing to the frame buffer 
             according to the local position of the drawing
         '''
-        print()
-        print(f'DRAWING HEIGHT {self.size.y}')
+        # print()
+        # print(f'DRAWING HEIGHT {self.size.y}')
         # print('======MANIPULATING BUFFER WITH DRAWING======')
 
         # if drawing is of the DrawingStack class
@@ -129,14 +134,15 @@ class FrameBuffer:
 
         # if drawing is of the Drawing class
         elif (isinstance(drawing, Drawing)):
-            # print('MANIPULATING BUFFER WITH DRAWING: ', drawing.tag)
+            print('MANIPULATING BUFFER WITH DRAWING: ', drawing.tag)
+            print(f'local pos y: {drawing.local_pos.y}, X: {drawing.local_pos.x}')
             # validate drawing is in panel bounds
             self._validateDrawingInBounds(drawing)
 
             # get the current state of the drawing and add it to frame buffer
             # according to local_position of the drawing
-            print('MANIPUATING BUFFER WITH DRAWING: ', drawing.tag)
-            print('CURRENT STATE; ', drawing.get_current_state())
+            # print('MANIPUATING BUFFER WITH DRAWING: ', drawing.tag)
+            # print('CURRENT STATE; ', drawing.get_current_state())
             self._addLinesToBuffer(drawing.get_current_state(), drawing.local_pos)
         
         else:
@@ -170,11 +176,16 @@ class FrameBuffer:
             raise TypeError("Can only Compare objects of type FrameBuffer")
 
         # check if the buffers are equal
-        if np.array_equal(self._buffer, other._buffer): return True
-
-        return False
+        return np.array_equal(self._buffer, other._buffer)
 
     def clear(self): self._buffer = self._createEmptyBuffer()
+
+    def copy(self, other: 'FrameBuffer'):
+        ''' Changes this fields to other's '''
+
+        self.size = other.size
+
+        self._buffer = other._buffer
 
     def _createEmptyBuffer(self) -> list[list[str]]: 
         # print("Creating empty buffer of size ", self.size.x, "x", self.size.y)

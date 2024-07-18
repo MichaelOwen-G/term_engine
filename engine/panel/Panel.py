@@ -23,14 +23,14 @@ class Panel(PanelInterface):
         super().__init__()
         
         # set the constraints, position and priority of the panel
-        self.size = size
+        self.size = Vec2(size.x, size.y)
         self.pos = pos
         self.priority = priority
 
         self.listen_to_keys = False
 
         # create the panel window with constraints
-        #self.createPanelWindow(self.size, self.pos)
+        # self.createPanelWindow(self.size, self.pos)
 
         # initialize double buffering for the panel
         # back buffer stores the previous frame of the panel
@@ -43,7 +43,6 @@ class Panel(PanelInterface):
         self.bounds: Bounds = Bounds(size, pos)
 
         # print('INITIAL BUFFER', self._front_buffer.buffer)
-
     
     ''' SETTERS AND GETTERS FOR PROPERTIES '''
     @property
@@ -70,12 +69,70 @@ class Panel(PanelInterface):
         ''' Can't set the front buffer with setter'''
         pass
 
+
+    ''' OVERRIDES FOR PANEL INTERFACE '''
+    @override
+    def update(self, dt: int, drawing):
+        '''
+        - This method is called every frame.
+        - Updates the panel class with the given drawing
+            - Gets the current frame of the drawing
+            - Creates a front buffer from the current frame of the drawing
+            - The front buffer is what will be rendered on the panel
+            - Pushes the previous frame to the back buffer
+        '''
+
+        print(f'---- panel update ----')
+
+        # validate the drawing object is of type Drawing/DrawingStack, throw error if not
+        if not (isinstance(drawing, DrawingInterface) or isinstance(drawing, DrawingStackInterface)):
+            raise TypeError("drawing must be of type Drawing or DrawingStack")
+        
+        # push the front_buffer to the back
+        self._back_buffer.copy(self._front_buffer)
+
+        # clear front buffer
+        self._front_buffer.clear()
+
+        print(f'PANEL METRICS: H:{self.size.y} W: {self.size.x}')
+        print(f'BUFFER METRICS: H:{len(self._front_buffer._buffer)} W: {len(self._front_buffer._buffer[0])}')
+
+        # set the pixels of the drawing to the front_buffer
+        self._front_buffer.manipulateBufferWithDrawing(drawing)
+
+        print('BUFFER AFTER UPDATE', self._front_buffer._buffer)
+
+
+    @override
+    def redrawWindow(self) -> None:
+        '''
+            Redraws/Renders and refreshes this panel_window on the screen with the front_buffer
+        '''
+
+        if not self.panel_window_exists(): return None
+        
+        self.panelWindow.addstr(0,0, self.front_buffer)
+        self.panelWindow.refresh()
+
+
+    @override
+    def shouldRedraw(self) -> bool:
+        '''
+        Checks if the panel window needs to be redrawn
+        '''
+        # redraw if the front buffer has been updated
+        return not self._front_buffer.isEqualTo(self._back_buffer) # True if the two buffers are not equal
+    
+    def panel_window_exists(self) -> bool: return self.panelWindow != None
+
+
+    ''' WINDOW MANIPULATION (CRUD OPERATIONS ON PANEL WINDOWS) '''
     def createPanelWindow(self, size: Vec2, pos: Vec2) -> None:
         '''
-        Creates a panel window in the CLI with the given size and position
+        Creates a panel window for an object in the CLI with the given size and position
         '''
         # print('SIZE WHEN CREATING PANEL WINDOW', size)
-        self.panelWindow = curses.newwin( size.y , size.x+1, pos.y, pos.x)
+        self.panelWindow = curses.newwin( size.y , size.x + 1, pos.y, pos.x)
         self.panel = curses.panel.new_panel(self.panelWindow)
 
         # set no delay to key press getting
@@ -90,70 +147,28 @@ class Panel(PanelInterface):
 
         self.panelWindow.refresh()
 
-    @override
-    def redrawWindow(self) -> None:
-        '''
-            Redraws/Renders and refreshes this panel_window on the screen with the front_buffer
-        '''
-
-        if (self.panelWindow == None): return None
-        
-        self.panelWindow.addstr(0,0, self.front_buffer)
-        self.panelWindow.refresh()
-
-
     def rebuild_window(self, size, pos):
         ''' Pop and recreate the panel window '''
         if (self.panelWindow != None): self.destroyWindow()
         self.createPanelWindow(size, pos)
-
+    
     def destroyWindow(self):
         '''
         Pops the panel window off the stack
         - This is used when the panel is no longer needed
         '''
+        if not self.panel_window_exists(): return
+            
         self.panelWindow.clear()
+
         # self.panelWindow.derwin()
         self.panelWindow.refresh()
         self.panelWindow = None
 
-    @override
-    def update(self, dt: int, drawing):
-        '''
-        - This method is called every frame.
-        - Updates the panel class with the given drawing
-            - Gets the current frame of the drawing
-            - Creates a front buffer from the current frame of the drawing
-            - The front buffer is what will be rendered on the panel
-            - Pushes the previous frame to the back buffer
-        '''
-
-        # print('panel update')
-
-        # validate the drawing object is of type Drawing/DrawingStack, throw error if not
-        if not (isinstance(drawing, DrawingInterface) or isinstance(drawing, DrawingStackInterface)):
-            raise TypeError("drawing must be of type Drawing or DrawingStack")
-        
-        # push the front_buffer to the back
-        self._back_buffer = self._front_buffer
-
-        # clear front buffer
-        self._front_buffer.clear()
-
-        # print('BUFFER AFTER CLEARED BEFORE UPDATE', self._front_buffer._buffer)
-
-        # set the pixels of the drawing to the front_buffer
-        self._front_buffer.manipulateBufferWithDrawing(drawing)
-
-        print('BUFFER AFTER UPDATE', self._front_buffer._buffer)
-
-    @override
-    def shouldRedraw(self) -> bool:
-        '''
-        Checks if the panel window needs to be redrawn
-        '''
-        # redraw if the front buffer has been updated
-        return self._front_buffer.isEqualTo(self._back_buffer)
+    ''' KEY SCANNING / TYPING '''
+    def scan_key(self) -> int:
+        ''' Gets the key pressed '''
+        return self.panelWindow.getch() if self.listen_to_keys else -1
 
 
 class StaticPanel(Panel):

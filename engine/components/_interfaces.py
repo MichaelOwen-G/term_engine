@@ -1,22 +1,21 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from engine.metrics.vec2 import Vec2
+from ..utils.pars_type_sensitivity import ParsTypeSensitivity
 
-class ObjectInterface(ABC):
-    def __init__(self, drawing: 'DrawingInterface', tag: str = ""):
-        
-        # validate the inputted drawing object
-        if not isinstance(drawing, DrawingInterface):
-            raise TypeError(f"Drawing must be of type Drawing or DrawingStack. Instead, Type {type(drawing)} was provided")
-        else:
-            self.drawing: DrawingInterface = drawing
+from ..metrics.vec2 import Vec2
 
-        # validate tag type
-        if not isinstance(tag, str):
-            raise TypeError("tag must be of type str")
-        else:
-            self.tag: str = tag
+class ObjectInterface(ParsTypeSensitivity):
+    def __init__(self, drawing, tags):
+        ParsTypeSensitivity.__init__(self,
+                                     self.__class__.__name__,
+                                     [
+                                         ('drawing', drawing, DrawingInterface),
+                                         ('tag', tags, list)
+                                     ])
+         
+        self.drawing: DrawingInterface = drawing
+        self.tag: str = tags
 
         self.effects: list = []
         self.listen_to_keys = False
@@ -33,6 +32,13 @@ class ObjectInterface(ABC):
         self.past_right_extreme = False
         self.past_left_extreme = False
 
+        self.isGarbage = False # if true, the object will not be disposed
+        self.isPersistent = False # if true, the object will not be disposed when out of view
+
+    @abstractmethod
+    def onMount(self):
+        pass
+
     @abstractmethod
     def update(self, dt: float):
         pass
@@ -44,10 +50,18 @@ class ObjectInterface(ABC):
     @abstractmethod
     def shouldRerender(self) -> bool:
         pass
+    
+    @abstractmethod
+    def dispose(self):
+        pass
 
 
-class ColliderInterface(ABC):
+class ColliderInterface(ParsTypeSensitivity):
     def __init__(self, colliderFill) -> None:
+        ParsTypeSensitivity.__init__(self, 
+                                     self.__class__.__name__, 
+                                     [])
+        
         self.colliderFill = colliderFill
         self._collisions = []
 
@@ -64,13 +78,21 @@ class ColliderInterface(ABC):
     def collide_with(self, other: 'ColliderInterface'): pass
 
 
-class DrawingInterface(ABC):
-    def __init__(self, tag: str) -> None:
+class DrawingInterface(ParsTypeSensitivity):
+    def __init__(self, tag: str, maxWidth: int, maxHeight: int) -> None:
+        ParsTypeSensitivity.__init__(self, 
+                                     self.__class__.__name__,
+                                     [
+                                         ('tag', tag, str),
+                                         ('maxWidth', maxWidth, int),
+                                         ('maxHeight', maxHeight, int),
+                                     ])
+        
         self.tag = tag
 
         # to track the constraints of the drawing
-        self.maxWidth: int = 0
-        self.maxHeight: int = 0
+        self.maxWidth: int = maxWidth
+        self.maxHeight: int = maxHeight
 
     @property
     def maxSize(self) -> Vec2:
@@ -78,9 +100,16 @@ class DrawingInterface(ABC):
 
     def draw(self, stringDrawing, stripNewLines, fillBlanks): pass
 
-class DrawingStackInterface(ABC):
+
+
+class DrawingStackInterface(ParsTypeSensitivity):
     def __init__(self):
+        ParsTypeSensitivity.__init__(self,
+                                     self.__class__.__name__,
+                                     [])
+        
         self.drawings: List[DrawingInterface] = []
 
     @abstractmethod
-    def add(drawing, stackDirection, alignment) -> None: pass
+    def add(drawing, stackDirection, alignment) -> None: 
+        pass

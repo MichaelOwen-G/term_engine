@@ -2,8 +2,8 @@ from engine.components.drawing import Drawing
 from engine.components.drawing_stack import DrawingStack
 from engine.components.object import Object
 from engine.core import Game
-from engine.effects.RepeatCallbacksEffect import RepeatCallbacksEffect
-from engine.effects.RepeatEffect import RepeatType
+from engine.effects.repeat_callbacks_effect import RepeatCallbacksEffect
+from engine.effects.repeat_effect import RepeatType
 from engine.metrics.duration import Duration, DurationMetrics
 from engine.metrics.vec2 import Vec2
 

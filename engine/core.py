@@ -3,54 +3,52 @@ import os
 import time
 from typing import List
 
-from .systems.FrameTimeKeeper import FrameTimeKeeper
-from .systems.TypingSystem import TypingSystem
-from .systems.RenderingSystem import RenderingSystem
-from .systems.CollisionSystem import CollisionSystem
+from .systems.garbage_collection_system import GarbageCollectionSystem
+from .systems.frame_time_keeper import FrameTimeKeeper
+from .systems.rendering_system import RenderingSystem
+from .systems.collision_system import CollisionSystem
 
-from .engine_interface import EngineInterface
+from ._interface import EngineInterface
 
 from .components._interfaces import ColliderInterface, ObjectInterface
 
-from .systems._interfaces import EngineSystem
-
 
 class GameEngine(EngineInterface):
-    def __init__(self, window_width: int, window_height: int):
-        EngineInterface.__init__(self, window_width, window_height)
+    def __init__(self, window_width: int, window_height: int, debug_mode: bool):
+        EngineInterface.__init__(self, window_width, window_height, debug_mode)
         
         # initialize curses
-        self.initialize_curses()
-        self._config_window(window_height, window_width)
+        if not debug_mode:
+            self.initialize_curses()
+            self._config_window(window_height, window_width)
 
-        ''' FRAME TIME KEEPER'''
-        self.frame_time_keeper: FrameTimeKeeper = FrameTimeKeeper()
-
+        self.debug_mode = debug_mode
         
+        
+        ''' ENGINE SYSTEMS'''
+        self.frame_time_keeper: FrameTimeKeeper = FrameTimeKeeper(self)
+        ''' FRAME TIME KEEPER'''
+
+        self.garbage_collector = GarbageCollectionSystem(self)
+        ''' To Handle the disposal of garbaged objects, we will need to run the garbage collector '''
+
+
+
+        ''' OBJECT SYSTEMS'''
         self.rendering_system: RenderingSystem = RenderingSystem(self)
         ''' To handle rendering the objects, we will need to run the rendering system on individual objects '''
 
-        
         self.collision_system: CollisionSystem = CollisionSystem(self)
         ''' To handle collisions, we will need to run the collision system on individual objects '''
 
-
-        self.typing_system: TypingSystem = TypingSystem(self)
-        ''' To handle key presses, we will need to run the typing system on individual objects '''
-
-
-        self.engine_systems: List[EngineSystem] = []
-        ''' ENGINE SYSTEMS 
-        - These are systems that will be run on/against the engine
-        '''
-
-
+        
+        
         ''' ENGINE EFFECTS'''
         self.engine_effects: list = [
             # These are effects like SpawnEffect
         ]
 
-        ''' OBJECTS '''
+        ''' OBJECTS ARRAY '''
         self.objects: list[ObjectInterface] = []
 
     @property
@@ -60,8 +58,6 @@ class GameEngine(EngineInterface):
     
     @collidable_objects.setter
     def collidable_objects(self, _): pass
-
-    
 
     def initialize_curses(self):
         # initialize curses
@@ -81,57 +77,45 @@ class GameEngine(EngineInterface):
         while True:
             # print('OBJECTS')
             # print(self.objects)
-            # time.sleep(1)
-            print()
-            print('FRAME ===========================================')
+            if self.debug_mode: 
+                time.sleep(1)
+                print()
+                print('================= FRAME ===========================')
+                print(f'FPS: {self.frame_time_keeper.fps} | DT: {self.frame_time_keeper.delta_time}ms')
                
             # run delta time keeper
             self.frame_time_keeper.run()
 
+            # run garbage collector
+            self.garbage_collector.run()
+
             # get delta_time: milliseconds
             dt: float = self.frame_time_keeper.delta_time
 
-            # ENGINE_SYSTEMS run independently
-            # run engine systems
-            for engine_sys in self.engine_systems:
-                engine_sys.run(dt)
-
             # run EngineEffects from the engine
             for effect in self.engine_effects:
-                effect.run(dt, self, None)
+                if effect.shouldRun(dt): effect.run(dt, self, None)
 
             # UPDATE GAME_ENGINE OBJECTS
             for object in self.objects:
-                # print('OBJECT')
-                # print(object)
-                print('SIZE', object.size)
-                print('POS', object.pos)
-                # print('BOUNDS', object.bounds)
-                # print('R FRONT BUFFER', object._front_buffer._buffer)
-                # print('FRONT BUFFER', object.front_buffer)
-
-                # handle key presses
-                if (object.listen_to_keys): self.typing_system.run(dt, object)
 
                 # run object effects
                 for effect in object.effects:
-                    if effect.shouldRun(dt):
-                        effect.run(dt, self, object)
+                    if effect.shouldRun(dt): effect.run(dt, self, object)
 
                 # Update Engine Objects
                 object.update(dt, self)
 
                  # handle collisions if object has a collider
-                if isinstance(object, ColliderInterface):
-                    self.collision_system.run(dt, object)
+                if isinstance(object, ColliderInterface): self.collision_system.run(object)
                 
                 # render the object
-                self.rendering_system.run(dt, object)
+                self.rendering_system.run(object)
 
 
 class Game(GameEngine):
-    def __init__(self, width: int, height: int):
-        super().__init__(width, height)
+    def __init__(self, width: int = 50, height: int = 50, debug_mode: bool = False):
+        super().__init__(width, height, debug_mode=debug_mode)
 
     def addObject(self, obj: ObjectInterface):
         ''' Takes an object of type ObjectInterface and adds it to the game engine '''
@@ -139,19 +123,24 @@ class Game(GameEngine):
         if not isinstance(obj, ObjectInterface):
             raise Exception('Object is not of type ObjectInterface')
         
+        # set the object's game
+        obj.game = self
+
+        # add the object to the game
         self.objects.append(obj)
 
-        # if the object's tag is not '' and does not exist yet, add it to the engine's attrs
-        if (obj.tag != '') and (not hasattr(self, obj.tag)):
-            setattr(self, obj.tag, obj)
+        # call object onMount method
+        obj.onMount()
 
-    def findObjects(self, tag: str) -> List[ObjectInterface]:
+    def addObjects(self, objs: List[ObjectInterface]):
+        [self.addObject(obj) for obj in objs]
+
+    def find_objects_by_tag(self, tag: str) -> List[ObjectInterface]:
         ''' Finds an object by its tag '''
         found_objs: List[ObjectInterface] = []
 
         for obj in self.objects:
-            if obj.tag == tag:
-                found_objs.append(obj)
+            if tag in obj.tags: found_objs.append(obj)
 
         return found_objs
 

@@ -64,49 +64,32 @@ class Vec2:
         return Vec2(self.x + other.x, self.y + other.y)
     
     def __sub__(self, other):
-        '''
-        Substract two vectors
-        '''
+        ''' Substract two vectors '''
         return Vec2(self.x - other.x, self.y - other.y)
     
     def __mul__(self, other):
-        '''
-        Multiply two vectors
-        '''
+        ''' Multiply two vectors '''
         return Vec2(self.x * other, self.y * other)
     
     def __truediv__(self, other):
         return Vec2(self.x / other, self.y / other)
     
     def __eq__(self, other):
-        '''
-        Equate two vectors
-        '''
+        ''' Equate two vectors '''
         return self.x == other.x and self.y == other.y
     
     def __repr__(self):
-        '''
-        Print the vector
-        '''
+        ''' Print the vector '''
         return f"Vec2({self.x}, {self.y})"
     
     def __str__(self):
-        '''
-        Print the vector
-        '''
+        ''' Print the vector '''
         return f"({self.x}, {self.y})"
     
     def __neg__(self):
-        '''
-        Negate the vector
-        '''
+        '''  Negate the vector '''
         return Vec2(-self.x, -self.y)
     
     def __abs__(self):
         return Vec2(abs(self.x), abs(self.y))
     
-    def __bool__(self):
-        '''
-        Check if the vector is not 0
-        '''
-        return self.x!= 0 or self.y!= 0

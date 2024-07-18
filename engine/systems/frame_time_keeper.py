@@ -1,6 +1,8 @@
 import time
 
-class FrameTimeKeeper:
+from ._interfaces import EngineSystem
+
+class FrameTimeKeeper(EngineSystem):
     '''
     Holds the time past since the last frame
         - Used to get the delta_time, milliseconds, which is the time past since the last frame.
@@ -8,23 +10,27 @@ class FrameTimeKeeper:
     '''
     delta_time: float = 0
 
-    def __init__(self):
+    def __init__(self, game_engine):
 
         self.dt_count_start: float = 0
         self.dt_count_end: float = 0
 
+        super().__init__(game_engine)
+
     @property
-    def frame_rate(self):
+    def fps(self):
         '''
         Calculates and updates the frame rate of the game
         - The frame rate is the number of times per second that the game is being updated
         - This calculation is based on the delta time of every frame
         '''
         # calculate the frame rate
-        return 1000 / self.delta_time
+        # convert delta_time ms to secs and
+        # divide 1 by the result
+        return 1000 / self.delta_time if self.delta_time!= 0 else 0
     
-    @frame_rate.setter
-    def frame_rate(self, _):
+    @fps.setter
+    def fps(self, _):
         pass
 
 

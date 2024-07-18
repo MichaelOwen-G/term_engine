@@ -24,7 +24,10 @@ class Drawing(DrawingInterface):
         - Use the draw method to add a string representation of the drawing
         - Use can add multiple frames to the drawing by using the addFrame method
         '''
-        super().__init__(tag)
+        super().__init__(tag, 0, 0)
+
+        print()
+        print(f'::::::::: DRAWING INIT :::::::::')
 
         # to track the constraints of the drawing
         self.maxWidth: int = 0
@@ -81,6 +84,11 @@ class Drawing(DrawingInterface):
         - fillBlanks(bool):   
             to fill the blank spaces with a " " character
             this ensures the frame drawing is a polygon
+
+        - It takes the string: str and splits it into lines: list[str]
+        - It then removes the starting and trailing newlines if necessary
+        - It then fills the blank spaces if necessary
+        - It then adds the lines: list[str] to the states list
         '''
         # OUTLINE
         # split the drawing to lines
@@ -88,8 +96,12 @@ class Drawing(DrawingInterface):
         # fill the blank spaces if necessary
         # add the lines to the states list
 
+        print(f'---- InDrawingState {self.tag}:::: ')
+
         # get the multilineString lines
         drawingState_lines: list[str] = stringDrawing.split('\n')
+
+        print(f'------ drawingState_lines: {drawingState_lines}')
 
         # fill the blank spaces to get a drawing that covers a uniform polygon
         # get the maximum length of the lines
@@ -103,6 +115,8 @@ class Drawing(DrawingInterface):
         # if len(drawingState_lines) < self.maxHeight:
         #     for _ in range(self.maxHeight - len(drawingState_lines)):
         #         drawingState_lines.append(" " * maxLength)
+
+        print(f'------ Added state lines: {drawingState_lines}')
 
         # add the frame to the frames list
         self.states.append(drawingState_lines)
@@ -123,17 +137,23 @@ class Drawing(DrawingInterface):
                 - to fill the blank spaces with a " " character
                 - this ensures the drawing is a polygon
         '''
+        print()
+        print(f'DRAWING {self.tag} STARTED:::::')
 
         # strip newlines for state if necessary
         # strip newlines for every state if necessary
         if stripNewLines:
-            stringDrawing.strip()
+            stringDrawing.strip('\n')
+        
+        print(f'--STRIPPED DRAWING: |{stringDrawing}|')
 
         # set maximum constraints of the drawing
         self._setMaxConstraints([stringDrawing])
 
         # make the frame
         self._drawState(stringDrawing, stripNewLines = stripNewLines, fillBlanks=fillBlanks)
+
+        print(f'--DRAWING STATES: {self.states}')
 
         return self
 
@@ -144,15 +164,16 @@ class Drawing(DrawingInterface):
         - Takes:
             - frames: a list os Strings that are the drawing
         '''
+        
+        print(f'-- DRAWING {self.tag} States Started :::::')
+        print(f'-- DRAWING {self.tag} States: {states}')
 
         # strip newlines for every state if necessary
         if stripNewLines:
-            states = [state.strip() for state in states if state != '']
+            states = [state.strip('\n') for state in states if state != '']
         
         # set maximum constraints of the drawing
         self._setMaxConstraints(states)
-
-        # print('DRAWING STATES: ', states)
 
         # draw every frame
         for state in states:
@@ -162,8 +183,10 @@ class Drawing(DrawingInterface):
                 fillBlanks = fillBlanks,
                 )
 
+        print(f'--DRAWING States: {self.states}')
 
-    def _getMaxWidth(self, states: list[list[str]]):
+
+    def _getMaxWidth(self, states: list[str]) -> int:
         maxWidth = 0
 
         #iterate through the states
@@ -176,12 +199,10 @@ class Drawing(DrawingInterface):
                 if len(line) > maxWidth:
                     maxWidth = len(line)
 
-        print('MAX WIDTH: ', maxWidth)
-
         # return the maximum width of the frames
         return maxWidth
     
-    def _getMaxHeight(self, states: list[str]):
+    def _getMaxHeight(self, states: list[str]) -> int:
         maxHeight = 0
 
         #iterate through the states of the drawing
@@ -189,10 +210,7 @@ class Drawing(DrawingInterface):
             # get state lines
             lines: list[str] = state.split("\n")
             # get the state with the most lines
-            if len(lines) > maxHeight:
-                maxHeight = len(lines)
-
-        print('MAX HEIGHT: ', maxHeight)
+            if len(lines) > maxHeight: maxHeight = len(lines)
 
         # return the height of the frames
         return maxHeight
@@ -204,4 +222,16 @@ class Drawing(DrawingInterface):
 
         # set max height
         self.maxHeight = self._getMaxHeight(states)
+
+        print(f'----DRAWING CONSTRAINTS: w:{self.maxWidth}, h:{self.maxHeight}')
         
+
+    def copy(self):
+        # create a new drawing with the same tag and constraints
+        # reset all the variables to their default values
+        copy_of_self = Drawing(tag = self.tag)
+        copy_of_self.maxWidth = self.maxWidth
+        copy_of_self.maxHeight = self.maxHeight
+        copy_of_self.states = self.states
+        
+        return copy_of_self

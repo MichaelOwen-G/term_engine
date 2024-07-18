@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 
 from ..components._interfaces import ObjectInterface
-from ..engine_interface import EngineInterface
+from .._interface import EngineInterface
 
 
 class Effect(ABC):

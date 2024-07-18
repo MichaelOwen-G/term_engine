@@ -1,7 +1,7 @@
 
 import inspect
 
-from .RepeatEffect import RepeatEffect, RepeatType
+from .repeat_effect import RepeatEffect, RepeatType
 
 from ..components._interfaces import ObjectInterface
 
@@ -19,7 +19,7 @@ class RepeatCallbacksEffect(RepeatEffect):
     def addCallback(self, callback: callable):
         '''
         Adds a callback to the effect:
-        - The callback should be a function that takes in 3 arguments
+        - The callback is provided with the following kwrags
           - dt: The time since the last frame
           - game: The game object
           - object: The object that the effect is applied to
@@ -27,10 +27,14 @@ class RepeatCallbacksEffect(RepeatEffect):
         '''
 
         # validate the callback argumet
-        self._validate_callback(callback)
+        # self._validate_callback(callback)
 
         # add to list of callbacks
         self._callbacks.append(callback)
+
+    def removeCallback(self, callback:callable):
+        ''' Removes the callback from the effect'''
+        self._callbacks.remove(callback)
 
     def _validate_callback(self, callback: callable):
         '''
@@ -52,11 +56,11 @@ class RepeatCallbacksEffect(RepeatEffect):
             raise ValueError("Effect Callbacks should take in exactly 3 arguments. Callback", callback, " requires ", len(params), "arguments")
 
     
-    def run(self, dt: float, game_engine, object: ObjectInterface):
-        super().run(dt, game_engine, object)
+    def run(self, dt: float, game, object: ObjectInterface):
+        super().run(dt, game, object)
 
         # run all the callbacks
         for callback in self._callbacks:
-            callback(dt, game_engine, object)
+            callback(dt = dt, game = game, effect = self, object = object)
 
 

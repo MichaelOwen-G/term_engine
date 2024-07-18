@@ -1,10 +1,10 @@
 from typing import List
 
-from ..engine_interface import EngineInterface
+from .._interface import EngineInterface
 
 from ..panel._interfaces import PanelInterface
 from ..components._interfaces import ColliderInterface
-from ..systems._interfaces import ObjectSystem
+from ._interfaces import ObjectSystem
 
 from ..components.collider import ColliderFill
 
