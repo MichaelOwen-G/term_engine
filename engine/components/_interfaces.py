@@ -6,16 +6,17 @@ from ..utils.pars_type_sensitivity import ParsTypeSensitivity
 from ..metrics.vec2 import Vec2
 
 class ObjectInterface(ParsTypeSensitivity):
-    def __init__(self, drawing, tags):
+    def __init__(self, drawing, tags, isPersistent):
         ParsTypeSensitivity.__init__(self,
                                      self.__class__.__name__,
                                      [
                                          ('drawing', drawing, DrawingInterface),
-                                         ('tag', tags, list)
+                                         ('tag', tags, list),
+                                         ('isPersistent', isPersistent, bool)
                                      ])
          
         self.drawing: DrawingInterface = drawing
-        self.tag: str = tags
+        self.tags: list[str] = tags
 
         self.effects: list = []
         self.listen_to_keys = False
@@ -33,22 +34,18 @@ class ObjectInterface(ParsTypeSensitivity):
         self.past_left_extreme = False
 
         self.isGarbage = False # if true, the object will not be disposed
-        self.isPersistent = False # if true, the object will not be disposed when out of view
+        self.isPersistent = isPersistent # if true, the object will not be disposed when out of view
 
     @abstractmethod
     def onMount(self):
         pass
 
     @abstractmethod
-    def update(self, dt: float):
+    def update(self, dt: float, game):
         pass
     
     @abstractmethod
     def render(self):
-        pass
-
-    @abstractmethod
-    def shouldRerender(self) -> bool:
         pass
     
     @abstractmethod

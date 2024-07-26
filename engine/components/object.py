@@ -1,5 +1,7 @@
 from typing import override
 
+from engine.components.drawing import Drawing
+
 from ..components.collider import CollisionType
 
 from .._interface import EngineInterface
@@ -79,14 +81,14 @@ class Object(Panel, ObjectInterface):
     ```
 
     '''
-    def __init__(self, tags: list[str] = [''], drawing: DrawingInterface = None, position: Vec2 = Vec2(0, 0), priority: int =0):
-        ObjectInterface.__init__(self, drawing, tags)
+    def __init__(self, tags: list[str] = [], drawing: DrawingInterface = None, position: Vec2 = Vec2(0, 0), priority: int =0, isPersistent = False):
+        ObjectInterface.__init__(self, drawing, tags, isPersistent=isPersistent)
 
         super().__init__(drawing.maxSize, position, priority = priority)
 
         # To keep track of the metrics
-        self._back_position = None
-        self._back_size = None
+        self._back_position: Vec2 = None
+        self._back_size :Vec2 = None
         self._back_priority = None
  
     def addEffect(self, effect: Effect):
@@ -112,9 +114,6 @@ class Object(Panel, ObjectInterface):
         # delete the effects
         self.effects.clear()
 
-        # delete drawing
-        del self.drawing
-
         # destroy the object's panel
         self.destroyWindow()
 
@@ -125,6 +124,9 @@ class Object(Panel, ObjectInterface):
         '''
         The method is called every frame to update the object
         '''
+        # delay update until it is deleted if this is garbage
+        if self.isGarbage: return
+
         self._update_pos_flags(game)
 
         super().update(dt, self.drawing)
@@ -147,36 +149,35 @@ class Object(Panel, ObjectInterface):
             self.past_right_extreme = True
 
         # check against vertical extremes
-        if self.bounds.y_end == game.floor:
-            self.on_floor = True
-        elif self.bounds.y_end > game.floor:
-            self.below_floor = True
-        elif self.bounds.y_start == game.roof:
-            self.above_roof = True
-        elif self.position.y < game.roof:
-            self.on_roof = True
+        if self.bounds.y_end == game.floor - 4: self.on_floor = True
+
+        elif self.bounds.y_end > game.floor - 3: self.below_floor = True
+        
+        elif self.bounds.y_start == game.roof + 1:  self.on_roof = True
+
+        elif self.position.y < game.roof + 1: self.above_roof = True
 
         # check if the object is in view
         if (not self.past_left_extreme and not self.past_right_extreme) and (not self.above_roof and not self.below_floor):
             self.in_view = True
 
+    @override    
+    def shouldRedraw(self) -> bool:
+        if self._check_for_new_config(): return True
+        return super().shouldRedraw()
+
     def _check_for_new_config(self) -> bool:
         ''' Checks if the object's metrics have changed since the last time it was rendered'''
+        
+        print(f'BACK POS: {self._back_position}')
+
         # if back configd are empty, then the object has never been rendered before
         if (self._back_position is None or self._back_size is None): return True
 
-        if ((self._back_position != self.position) or (self._back_size != self.size)):
+        if ((not self._back_position == self.position) or (not self._back_size == self.size)):
             return True
-        
-        return False
 
-    @override
-    def shouldRerender(self) -> bool:
-        ''' Returns True if the object has changed size or position (metrics have changed) and
-            the object is in view or
-            the object's panel needs to redraw
-        '''
-        return True if self._check_for_new_config() else self.shouldRedraw()
+        return False
            
     @override
     def render(self, game: EngineInterface):
@@ -186,23 +187,22 @@ class Object(Panel, ObjectInterface):
         - It first reconfigures the panel_window if the metrics have changed
         - Then, It calls the panel's redraw method
         '''   
-        print(f'----Trying to render')
+        print(f'----Re rendering')
+
+        if self.isGarbage: return
+
+
         # handle reconfiguring
         # handle repositiong and resizing of the panel_window
         if (self._check_for_new_config()): self._reconfigurePanelWindow(game)
 
         # redraw the window if the panel_window needs to redraw
         # and the game is not in debug mode
-        # do not attempt redraw if panel does not exist
-        print(f'--- SHOULDREDRAW {self.shouldRedraw()}')
-        print(f'--- PANEL WINDOW EXISTS {self.panel_window_exists()}')
+        print(f'--- PANEL SHOULDREDRAW {super().shouldRedraw()}')
 
-        if (self.shouldRedraw() and not game.debug_mode) and self.panel_window_exists(): 
-            self.redrawWindow()
+        if (super().shouldRedraw()): self.redrawWindow()
 
-        # declare garbage if object is non-persistent and is out of view
-        if not self.isPersistent and not self.in_view: self.isGarbage = True
-    
+
     def _reconfigurePanelWindow(self, game: EngineInterface) -> bool:
         ''' Handles the change in the metrics of the 
          - Repositiong and resizing the object's panel_window
@@ -210,29 +210,40 @@ class Object(Panel, ObjectInterface):
          this function is a workaround to rebuild the panel_window in the new position and size.
          The approach works but it is very costly.
         '''
+    
         
-        # the object's panel should be rendered in a fresh configs
-        # pop the old panel_window if it exists
-        if self.panel_window_exists() and not game.debug_mode: self.destroyWindow()
+        # if object is being rendered for the first time,
+        # i.e _back_position and _back_size are zero
+        if self._back_position is None or self._back_position is None:
+            # create panel window
+            # only if the object is in view
+            if not game.debug_mode and self.in_view: self.createPanelWindow(self.size, self.pos)
 
-        # create a new panel_window with the new configs
-        # if the object is in view
-        if self.in_view and not game.debug_mode: self.createPanelWindow(self.size, self.pos)
+            self._back_position = Vec2().replace_with(self.pos)
+            self._back_size = Vec2().replace_with(self.size)
 
-        # update the back_position
-        try:
-            self._back_position.replace_with(self.pos)
+        else:
+            # if the position has changed
+            # - reposition the panel_window
+            if not self._back_position == self.pos:
+                self.destroyWindow()
+                if not game.debug_mode and self.in_view: self.reposition_window()
+                self._back_position.replace_with(self.pos)
 
-            # update the back_size
-            self._back_size.replace_with(self.size)
-
-        except AttributeError:
-            self._back_position = Vec2(self.pos.x, self.pos.y)
-            self._back_size = Vec2(self.size.x, self.size.y)
+            # if the size has changed
+            if not self._back_size == self.size:
+                self.destroyWindow()
+                if not game.debug_mode and self.in_view: self.panelWindow.resize(self.size.y, self.size.x)
+                
+                # update the back_size
+                self._back_size.replace_with(self.size)
 
         # update bounds
         self.bounds.pos = self.pos
         self.bounds.size = self.size
+
+        # declare garbage if object is non-persistent and is out of view
+        if not self.isPersistent and not self.in_view: self.isGarbage = True
 
     
 ''''
@@ -242,18 +253,16 @@ class CollidableObject (Object, Collider):
     def __init__(
                  self, 
                  
-                 tag: str = "", 
+                 tags: list[str] = [], 
                  drawing: DrawingInterface = None, 
                  position: Vec2 = Vec2(0, 0), 
                  priority: int =0, 
                  colliderFill: ColliderFill = ColliderFill.FILLED,
+                 isPersistent = False
                  ):
         
-        Object.__init__(self, drawing, tag, position, priority)
+        Object.__init__(self, tags = tags,  drawing = drawing, position=position, priority=priority, isPersistent = isPersistent)
         Collider.__init__(self, colliderFill)
-
-    def update(self, dt: float):
-        super().update(dt, self.drawing)
 
     @override
     def dispose(self):
@@ -270,3 +279,10 @@ class CollidableObject (Object, Collider):
             self.on_floor = True
 
         return super().collide_with(other, collisionType)
+
+
+class TextBox(Object):
+    def __init__(self, text:str, tags = [], x = 0, y = 0, priority= 0):
+        drawing = Drawing(tag=text, drawingStates=[text])
+
+        super().__init__(tags=tags, drawing=drawing, position=Vec2(x, y), priority=priority)

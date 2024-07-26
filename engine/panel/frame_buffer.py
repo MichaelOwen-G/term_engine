@@ -1,3 +1,4 @@
+from dataclasses import dataclass, field
 import numpy as np
 
 from ..components.drawing import Drawing
@@ -6,6 +7,7 @@ from ..components.drawing_stack import DrawingStack
 from ..metrics.vec2 import Vec2
 
 
+@dataclass
 class FrameBuffer:
     '''
     Holds the frame buffer or pixels of a panel.
@@ -16,17 +18,9 @@ class FrameBuffer:
         minimizing screen operations and ensuring that only changed pixels are
         rendered.
     '''
-    def __init__(self, size: Vec2):
-        '''
-        - Receives the size of the frame buffer
-        - Initializes the frame buffer to an empty 2D list of empty strings
-        '''
+    size: Vec2 = field(default_factory=Vec2())
 
-        self.size = size
-
-        self._emptyBuffer: list[list[str]] = self._createEmptyBuffer()
-
-        self._buffer: list[list[str]] = self._emptyBuffer
+    _buffer: list[list[str]] = field(init=False, default_factory = list[list])
 
     ''' SETTERS AND GETTERS FOR PROPERTIES '''
     @property
@@ -134,8 +128,8 @@ class FrameBuffer:
 
         # if drawing is of the Drawing class
         elif (isinstance(drawing, Drawing)):
-            print('MANIPULATING BUFFER WITH DRAWING: ', drawing.tag)
-            print(f'local pos y: {drawing.local_pos.y}, X: {drawing.local_pos.x}')
+            # print('MANIPULATING BUFFER WITH DRAWING: ', drawing.tag)
+            # print(f'local pos y: {drawing.local_pos.y}, X: {drawing.local_pos.x}')
             # validate drawing is in panel bounds
             self._validateDrawingInBounds(drawing)
 
@@ -148,8 +142,6 @@ class FrameBuffer:
         else:
             raise TypeError("drawing must be of type Drawing or DrawingStack")
         
-        # print('==============================================')
-
 
     def resize(self, size: Vec2):
         '''
@@ -159,7 +151,7 @@ class FrameBuffer:
 
         self._emptyBuffer = self._createEmptyBuffer()
 
-    def concentrateBuffer(self) -> str: 
+    def in_pixels(self) -> str: 
         '''
         Converts the buffer pixels to a string
         '''
@@ -177,6 +169,10 @@ class FrameBuffer:
 
         # check if the buffers are equal
         return np.array_equal(self._buffer, other._buffer)
+    
+    def _createEmptyBuffer(self) -> list[list[str]]: 
+        # print("Creating empty buffer of size ", self.size.x, "x", self.size.y)
+        return np.full((self.size.y, self.size.x), ' ')
 
     def clear(self): self._buffer = self._createEmptyBuffer()
 
@@ -186,8 +182,4 @@ class FrameBuffer:
         self.size = other.size
 
         self._buffer = other._buffer
-
-    def _createEmptyBuffer(self) -> list[list[str]]: 
-        # print("Creating empty buffer of size ", self.size.x, "x", self.size.y)
-        return np.full((self.size.y, self.size.x), ' ')
 

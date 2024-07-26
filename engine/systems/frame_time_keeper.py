@@ -43,9 +43,25 @@ class FrameTimeKeeper(EngineSystem):
         # if this isn't the first loop of the game
         self.dt_count_end = time.time() if self.dt_count_start!= 0 else self.dt_count_start
 
-        # calculate delta time, convert to milliseconds
+        # calculate delta time/time passed, convert to milliseconds
         self.delta_time = float((self.dt_count_end - self.dt_count_start) * 1000)
 
         # mark the start of the next loop
         self.dt_count_start = time.time()
 
+        self._limit_frames_to_cap()
+
+        
+
+    def _limit_frames_to_cap(self):
+        # # get preferred delta time accoring to game.frame_cap
+        self._pref_dt = 1 / self.game_engine.frame_cap
+
+        # # check if this frame's delta_time was longer than pref_dt
+        # # if so ignore limit_frames_to_cap
+        # if self.delta_time >= self._pref_dt: return
+
+        # # if not time.sleep the remaining time
+        time.sleep(self._pref_dt)
+
+        # time.sleep(.005)

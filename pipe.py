@@ -1,7 +1,7 @@
 from typing import override
 from engine.components.drawing import Drawing
 from engine.components.drawing_stack import DrawingStack
-from engine.components.object import Object
+from engine.components.object import CollidableObject
 from engine.effects.repeat_callbacks_effect import RepeatCallbacksEffect
 from engine.effects.repeat_effect import RepeatType
 from engine.metrics.duration import Duration, DurationMetrics
@@ -9,27 +9,27 @@ from engine.metrics.vec2 import Vec2
 
 
 ''' Drawings '''
-pipe_trunk = ['  |   |  ']
+pipe_trunk = ['  |      \  ']
 
 
 top_pipe_base = [
 '''
- _|   |_
-|_______|
+ _|      \_
+|__________|
 '''
 ]
 
 
 bottom_pipe_base = [
 '''
- _______ 
-|_     _|
-  |   |
- '''
+ __________ 
+|_       __|
+  |      |
+'''
 ]
 
 
-class Pipe(Object):
+class Pipe(CollidableObject):
     def __init__(self, pipe_height, x = 0, y = 0, tags = '',  priority = 0):
        
         pipe = self.draw_pipe(pipe_height)
@@ -56,7 +56,7 @@ class Pipe(Object):
         pipeTrunk = Drawing(tag = "top-pipeTrunk", drawingStates = pipe_trunk)
 
         # create pipeDrawing stack
-        pipe = DrawingStack(tag = f'{pipe_part}_pipe', maxWidth = pipeBase.maxWidth, maxHeight = 0)
+        pipe = DrawingStack(tag = f'{pipe_part}_pipe', maxWidth = 0, maxHeight = 0)
 
         # get number of pipe_trunk parts b
         trunk_len: int = pipe_height - pipeBase.maxHeight
@@ -81,11 +81,10 @@ class Pipe(Object):
         self.x = self.pos.x
 
         ''' ANIMATIONS '''
-        # add the fly animation effect
         # define effect
         self.move_effect = RepeatCallbacksEffect(
             repeatType=RepeatType.INDEFINETLY_EVERY_DURATION, 
-            duration=Duration(DurationMetrics.SECONDS, 1),
+            duration=Duration(DurationMetrics.MILLISECONDS, 110),
             )
 
         self.move_effect.addCallback(self.move_pipe)

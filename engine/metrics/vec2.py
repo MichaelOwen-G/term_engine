@@ -1,17 +1,17 @@
+from dataclasses import dataclass, field
 
-
+@dataclass
 class Vec2:
     '''
-    Holds a 2D vector with x and y
-    x and y values must be integers:
-     since the curses draw func only takes integers
-    Has:
+    ### A 2D vector with x and y
+    x and y values must be of type int
+    
+    Fields:
     - x(int)
     - y(int)
     '''
-    def __init__(self, x:int = 0, y:int = 0):
-        self._x = x
-        self._y = y
+    _x: int = field(default=0)
+    _y: int = field(default=0)
 
     '''
     Property getter and setter for x and y
@@ -43,12 +43,14 @@ class Vec2:
         # convert to int if it is not an int
         return int(value) if value is not int else value
     
-    def replace_with(self, other: 'Vec2'):
+    def replace_with(self, other: 'Vec2') -> 'Vec2':
         '''
         Replace the values of this vector with the values of another vector
         '''
         self._x = other.x
         self._y = other.y
+
+        return self 
     
 
     '''

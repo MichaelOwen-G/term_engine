@@ -1,22 +1,27 @@
 
 from typing import override
+from engine._interface import EngineInterface
+from engine.components._interfaces import ObjectInterface
+from engine.components.collider import CollisionType
 from engine.components.drawing_stack import DrawingStack
 from engine.components.drawing import Drawing
-from engine.components.object import Object
+from engine.components.object import CollidableObject, Object
 from engine.effects.repeat_callbacks_effect import RepeatCallbacksEffect
 from engine.effects.repeat_effect import RepeatType
 from engine.metrics.duration import Duration, DurationMetrics
 from engine.metrics.vec2 import Vec2
 
 
-class Bird(Object):
-    def __init__(self, x = 0, y = 0, priority = 0):
+class Bird(CollidableObject):
+    def __init__(self, x = 0, y = 0, tags: list[str] = [], priority = 0):
        
         birdDrawing = self.draw_bird()
 
-        tags: list[str] = ['bird']
-        
-        super().__init__(tags=tags, drawing=birdDrawing, position=Vec2(x, y), priority=priority)
+        self.dead = False
+
+        self.key_presses =[]
+
+        super().__init__(tags=tags, drawing=birdDrawing, position=Vec2(x, y), priority=priority, isPersistent = True)
 
 
     def draw_bird(self) -> Drawing:
@@ -51,14 +56,8 @@ class Bird(Object):
         self.addEffect(self.fly_effect)
 
         # define effect
-        self.move_effect = RepeatCallbacksEffect(
-            repeatType=RepeatType.INDEFINETLY_EVERY_DURATION, 
-            duration=Duration(DurationMetrics.SECONDS, 1),
-            )
 
-        self.move_effect.addCallback(self.move_pipe)
-        
-        self.addEffect(self.move_effect)
+        ''' ANIMATIONS '''
         return super().onMount()
     
     def move_pipe(self, **kwargs):
@@ -75,6 +74,34 @@ class Bird(Object):
             raise TypeError('game or object arguments is Null')
 
         obj.drawing.next_state()
+
+    def update(self, dt: float, game: EngineInterface):
+
+        key = game.stdscr.getch()
+
+        self.handle_bird_movement(key)
+
+        super().update(dt, game)
+
+    def listen_for_key_press(self) -> bool: return True
+
+
+    def collide_with(self, other: ObjectInterface, collisionType: CollisionType):
+        super().collide_with(other, collisionType)
+
+        self.dead = True
+
+    def handle_bird_movement(self, key):
+
+        if key == ord('w'):
+            self.pos.y -= 1
+
+        elif key == ord('s'):
+            self.pos.y += 1
+
+
+
+
 
 
 

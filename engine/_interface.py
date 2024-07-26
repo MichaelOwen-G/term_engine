@@ -5,7 +5,7 @@ class EngineInterface(ABC):
     '''
     Defines the interface for the game engine
     '''
-    def __init__(self, window_width: int, window_height: int, debug_mode: bool):
+    def __init__(self, window_width: int, window_height: int, debug_mode: bool, frame_cap: int):
         ''' MUST HAVE THE FOLLOWING FIELDS'''
         self.frame_time_keeper = None
 
@@ -23,6 +23,10 @@ class EngineInterface(ABC):
 
         self.debug_mode: bool = debug_mode
 
+        self.frame_cap = frame_cap
+
+        self.running = True
+
         '''METRICS'''
         self.window_width = window_width
         self.window_height = window_height
@@ -33,6 +37,8 @@ class EngineInterface(ABC):
         # UTILIZES curses
         self.stdscr = None
 
-        ''' MUST HAVE THE FOLLOWING METHODS'''
-        @abstractmethod
-        def run(self): pass
+    ''' MUST HAVE THE FOLLOWING METHODS'''
+    @abstractmethod
+    def run(self):...
+
+    def update(self, dt: int):...

@@ -14,8 +14,8 @@ from .components._interfaces import ColliderInterface, ObjectInterface
 
 
 class GameEngine(EngineInterface):
-    def __init__(self, window_width: int, window_height: int, debug_mode: bool):
-        EngineInterface.__init__(self, window_width, window_height, debug_mode)
+    def __init__(self, window_width: int, window_height: int, debug_mode: bool, frame_cap: int ):
+        EngineInterface.__init__(self, window_width, window_height, debug_mode, frame_cap)
         
         # initialize curses
         if not debug_mode:
@@ -66,22 +66,30 @@ class GameEngine(EngineInterface):
         curses.curs_set(0)  # Hide cursor
         curses.noecho()  # Don't echo keystrokes
 
+        self.stdscr.nodelay(True) # avoid waiting for key presses
+
+
     def _config_window(self, height: int, width: int):
         ''' Configures the CLI window '''
         window_confid_command: str = f'mode con: cols={width} lines={height}'
         os.system(window_confid_command)
 
+    def update(self, dt: int):
+        pass
+
     def run(self):
         
         # create game loop
         while True:
-            # print('OBJECTS')
-            # print(self.objects)
+            
             if self.debug_mode: 
                 time.sleep(1)
                 print()
                 print('================= FRAME ===========================')
                 print(f'FPS: {self.frame_time_keeper.fps} | DT: {self.frame_time_keeper.delta_time}ms')
+
+                print('OBJECTS')
+                print(len(self.objects))
                
             # run delta time keeper
             self.frame_time_keeper.run()
@@ -92,6 +100,7 @@ class GameEngine(EngineInterface):
             # get delta_time: milliseconds
             dt: float = self.frame_time_keeper.delta_time
 
+            
             # run EngineEffects from the engine
             for effect in self.engine_effects:
                 if effect.shouldRun(dt): effect.run(dt, self, None)
@@ -108,14 +117,25 @@ class GameEngine(EngineInterface):
 
                  # handle collisions if object has a collider
                 if isinstance(object, ColliderInterface): self.collision_system.run(object)
-                
-                # render the object
-                self.rendering_system.run(object)
+
+                self.rendering_system.run(object) 
+
+            # CALL GAME UPDATE FUNCTION
+            self.update(dt)      
+
+            if not self.running: break     
 
 
 class Game(GameEngine):
-    def __init__(self, width: int = 50, height: int = 50, debug_mode: bool = False):
-        super().__init__(width, height, debug_mode=debug_mode)
+    def __init__(self, width: int = 50, height: int = 50, debug_mode: bool = False, frame_cap:int = 900):
+        super().__init__(width, height, debug_mode=debug_mode, frame_cap=frame_cap)
+
+        # call on launch
+        self.onLaunch()
+
+    def onLaunch(self):...
+    def update(self, dt: int):...
+
 
     def addObject(self, obj: ObjectInterface):
         ''' Takes an object of type ObjectInterface and adds it to the game engine '''
@@ -123,7 +143,7 @@ class Game(GameEngine):
         if not isinstance(obj, ObjectInterface):
             raise Exception('Object is not of type ObjectInterface')
         
-        # set the object's game
+        # set the object's game instance
         obj.game = self
 
         # add the object to the game
@@ -146,5 +166,7 @@ class Game(GameEngine):
 
     def addEffect(self, effect):
         self.engine_effects.append(effect)
+
+    
 
 

@@ -12,7 +12,13 @@ class RenderingSystem(ObjectSystem):
     def __init__(self, game_engine):
         super().__init__(game_engine)
 
-    def run(self, object: ObjectInterface):
+    def run_all(self):
+        game_objs = self.game_engine.objects
+
+        for obj in game_objs:
+            self.run(obj)
+
+    def run(self, object: PanelInterface):
         '''
         Rerenders/Redraws the front buffer of an object's panel to the screen
         '''
@@ -24,4 +30,4 @@ class RenderingSystem(ObjectSystem):
         
         # redraw/rerender the object's panels if the object wants to redraw and 
         # the object is in view
-        if object.shouldRerender(): object.render(self.game_engine)
+        if object.shouldRedraw(): object.render(self.game_engine)
