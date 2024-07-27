@@ -61,7 +61,8 @@ class RepeatEffect(Effect):
         if not isinstance(object, ObjectInterface):
             if  object is not None:
                 raise TypeError("object must be of type Object or None")
-
+    
+    def dispose(self):...
     
     def shouldRun(self, dt:float) -> bool:
         '''

@@ -1,19 +1,18 @@
 from engine.components.object import TextBox
-from engine.core import Game
+from engine.core import Game, GameScreen
 
 from bird import Bird
 from engine.metrics.duration import Duration, DurationMetrics
 from pipe_spawner import PipeSpawner
 
-
-class FlappyGuessGame(Game):
+class MyGame(Game):
     def __init__(self):
 
         width = 90
 
         height = 35
 
-        debug_mode = False
+        debug_mode = True
 
         frame_cap = 1000
 
@@ -21,12 +20,30 @@ class FlappyGuessGame(Game):
 
         super().__init__(width, height, debug_mode=debug_mode, frame_cap = frame_cap)
 
+    def onCreate(self):
+        # add screens 
+        game_s = FlappyGuessGame()
+
+        self.addScreen(game_s)
+
+        return super().onCreate()
+
+
+class FlappyGuessGame(GameScreen):
+    def __init__(self):
+
+        tag = 'game'
+
+        self.game_over_tag = 'game_over'
+
+        super().__init__(tag)
+
     def onLaunch(self):
         bird = Bird(x = 10, y = 2, tags = ['bird'])
 
         self.addObject(bird)
 
-        pipe_spawner = PipeSpawner(Duration(DurationMetrics.SECONDS, 5), once=False)
+        pipe_spawner = PipeSpawner(Duration(DurationMetrics.SECONDS, 1), once=False)
 
         self.addEffect(pipe_spawner)
 
@@ -48,6 +65,8 @@ class FlappyGuessGame(Game):
         else:
             self.remove_message()
 
+        super().update(dt)
+
     def game_over_message(self):
         # if not already in the game
         if len(self.find_objects_by_tag(self.game_over_tag)) >= 1: return
@@ -62,6 +81,6 @@ class FlappyGuessGame(Game):
             
 
 
-game = FlappyGuessGame()
+game = MyGame()
 
 game.run()

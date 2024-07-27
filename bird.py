@@ -1,4 +1,5 @@
 
+import curses
 from typing import override
 from engine._interface import EngineInterface
 from engine.components._interfaces import ObjectInterface
@@ -55,10 +56,25 @@ class Bird(CollidableObject):
         
         self.addEffect(self.fly_effect)
 
+        self.gravity_effect = RepeatCallbacksEffect(
+            repeatType=RepeatType.INDEFINETLY_EVERY_DURATION, 
+            duration=Duration(DurationMetrics.MILLISECONDS, 150),
+            )
+
+        self.gravity_effect.addCallback(self.pull_down)
+        
+        self.addEffect(self.gravity_effect)
+
         # define effect
 
         ''' ANIMATIONS '''
         return super().onMount()
+    
+    def pull_down(self, **kwargs):
+        object = kwargs.get('object', None)
+
+        object.position.y += 1
+
     
     def move_pipe(self, **kwargs):
         object = kwargs.get('object', None)
@@ -77,9 +93,11 @@ class Bird(CollidableObject):
 
     def update(self, dt: float, game: EngineInterface):
 
-        key = game.stdscr.getch()
+        # key = game.stdscr.getch()
 
-        self.handle_bird_movement(key)
+        # self.handle_bird_movement(key)
+
+        self.gravity()
 
         super().update(dt, game)
 
@@ -92,12 +110,11 @@ class Bird(CollidableObject):
         self.dead = True
 
     def handle_bird_movement(self, key):
-
         if key == ord('w'):
-            self.pos.y -= 1
+            self.pos.y -= 2
 
-        elif key == ord('s'):
-            self.pos.y += 1
+    def gravity(self):...
+        # self.pos.y += 1
 
 
 

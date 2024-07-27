@@ -1,40 +1,41 @@
 
 from typing import override
+from engine._interface import EngineInterface
+from engine.components._interfaces import ObjectInterface
 from engine.effects.repeat_effect import RepeatEffect, RepeatType
 from engine.metrics.duration import Duration
 
+import playsound
 
-class AudioEffect(RepeatEffect):
-    def __init__(self, repeatType: RepeatType = RepeatType.ONCE_IN_NEXT_FRAME, duration: Duration = None):
+class SoundEffect(RepeatEffect):
+    def __init__(self, filepath, repeatType: RepeatType = RepeatType.ONCE_IN_NEXT_FRAME, duration: Duration = None, autoPlay = True):
 
-        self._playing: bool = False
+        self._play: bool = autoPlay
+
+        self.filepath = filepath
 
         super().__init__(repeatType, duration)
 
-
-    @property
-    def playing(self):
-        return self._playing
-    
-    @playing.setter
-    def playing(self, _):
-        pass
-
     @override
     def shouldRun(self, dt: float) -> bool:
-        return super().shouldRun(dt) if self._playing else False
+        # return False if _play is False otherwise,
+        # return whether the effect should run based on repeatType and Duration
+        return super().shouldRun(dt) if self._play else False
 
+    def run(self, dt: float, game: EngineInterface, object: ObjectInterface | None):
+        # play sound
+        self._playfile()
 
-    def load(self, filepath):
-        # load the audio from file
-        self.file_path: str = filepath
+        return super().run(dt, game, object)
 
-    
+    def _playfile(self):
+        playsound.playsound(self.filepath, block = False)
+
     def play(self):
-        self._playing = True
+        self._play = True
 
     def pause(self):
-        self._playing = False
+        self._play = False
 
     def stop(self):
         # pause audio
@@ -44,4 +45,5 @@ class AudioEffect(RepeatEffect):
         self.dispose()
 
     def dispose(self):
-        pass
+        
+        return super().dispose()
