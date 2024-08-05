@@ -1,8 +1,13 @@
 from abc import ABC, abstractmethod
+from collections import deque
+import curses
+from enum import Enum
+import os
 from typing import List
 
-from engine.components._interfaces import ObjectInterface
+import pygame
 
+from engine.components._interfaces import ObjectInterface
 
 class EngineInterface(ABC):
     '''
@@ -16,14 +21,6 @@ class EngineInterface(ABC):
         
         self.collision_system = None
 
-        self.typing_system = None
-
-        self.engine_systems = None
-        
-        self.engine_effects: list = []
-
-        self.objects: list = []
-
         self.debug_mode: bool = debug_mode
 
         self.frame_cap = frame_cap
@@ -32,39 +29,84 @@ class EngineInterface(ABC):
 
         '''METRICS'''
         self.window_width = window_width
-        self.window_height = window_height
+        self.window_height = window_height 
 
-        self.floor = self.window_height - 2
+        self.floor = self.window_height - 6
         self.roof = 1
 
         # UTILIZES curses
         self.stdscr = None
+        
+    def init(self):
+        self.init_curses() # start screen
+        self._config_window() # resize cli window
+        self.init_pygame() # initilaize sound
+    
+    def dispose(self):
+        pygame.mixer.quit()
+    
+    
+    ''' CURSES FUNCTIONS '''
+    def init_curses(self):
+        # initialize curses
+        self.stdscr = curses.initscr()
+        self.stdscr.box()
 
-    ''' MUST HAVE THE FOLLOWING METHODS'''
+        curses.curs_set(0)  # Hide cursor
+        curses.noecho()  # Don't echo keystrokes
+
+        self.stdscr.nodelay(True) # avoid waiting for key presses
+    
+    def _config_window(self): # resize the cli window
+        ''' Configures the CLI window '''
+        window_confid_command: str = f'mode con: cols={self.window_width} lines={self.window_height}'
+        os.system(window_confid_command)
+
+    def clear_screen(self):
+        self.stdscr.clear()
+        self.stdscr.refresh()
+
+
+    ''' SOUND ASSETS FUNCTIONALITY '''
+    # initialize pygame mixer
+    def init_pygame(self): pygame.mixer.init()
+    def exit_pygame(self): pygame.mixer.quit()
+        
+    # Loading sound
+    def load_sound(self, file_path:str) -> pygame.mixer.Sound:
+        return pygame.mixer.Sound(file_path) if not self.debug_mode else _SoundShell()
+        
+    ''' MUST HAVE THE FOLLOWING METHODS'''       
     @abstractmethod
     def run(self):...
 
     def update(self, dt: int):...
+    
+class _SoundShell:
+    def play(self):...
+    def stop(self):...
 
 
 class GameScreenInterface(ABC):
     def __init__(self):
 
         ''' ENGINE EFFECTS'''
-        self.screen_effects: list = [
-            # These are effects like SpawnEffect
-        ]
+        self.screen_effects: list = []
+        '''These are effects like SpawnEffect'''
 
         ''' OBJECTS ARRAY '''
         self.objects: list[ObjectInterface] = []
 
+        self.game_instance = None
+        ''' Is None if this is Game and not None if this is of type GameScreen '''
+
     def addObject(self, obj: ObjectInterface):
-        # set the object's game instance
-        obj.game = self
-        # add the object to the game
-        self.objects.append(obj)
-        # call object onMount method
-        obj.onMount()
+        self.objects.append(obj) # add the object to the game
+        
+        obj.onMount(
+            game = self.game_instance if self.game_instance is not None else self,
+            screen = self,
+            ) # call object onMount method
 
     def removeObject(self, object):
         self.objects.remove(object)

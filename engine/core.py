@@ -1,8 +1,5 @@
-from abc import ABC
-import curses
-import os
 import time
-from typing import List, override
+from typing import override
 
 from .systems.garbage_collection_system import GarbageCollectionSystem
 from .systems.frame_time_keeper import FrameTimeKeeper
@@ -11,34 +8,30 @@ from .systems.collision_system import CollisionSystem
 
 from ._interface import EngineInterface, GameScreenInterface
 
-from .components._interfaces import ColliderInterface, ObjectInterface
-
+from .components._interfaces import ColliderInterface
+import psutil
 
 class GameEngine(EngineInterface):
     def __init__(self, window_width: int, window_height: int, debug_mode: bool, frame_cap: int ):
         EngineInterface.__init__(self, window_width, window_height, debug_mode, frame_cap)
         
-        # initialize curses
-        if not debug_mode:
-            self.initialize_curses()
-            self._config_window(window_height, window_width)
-
-        self.debug_mode = debug_mode
+        if not self.debug_mode: self.init() # initialize engine resources
         
+        self.process = psutil.Process()
         
         ''' ENGINE SYSTEMS'''
         self.frame_time_keeper: FrameTimeKeeper = FrameTimeKeeper(self)
         ''' FRAME TIME KEEPER'''
 
-        self.garbage_collector = GarbageCollectionSystem(self)
+        self.garbage_collector = GarbageCollectionSystem()
         ''' To Handle the disposal of garbaged objects, we will need to run the garbage collector '''
 
 
         ''' OBJECT SYSTEMS'''
-        self.rendering_system: RenderingSystem = RenderingSystem(self)
+        self.rendering_system: RenderingSystem = RenderingSystem()
         ''' To handle rendering the objects, we will need to run the rendering system on individual objects '''
 
-        self.collision_system: CollisionSystem = CollisionSystem(self)
+        self.collision_system: CollisionSystem = CollisionSystem()
         ''' To handle collisions, we will need to run the collision system on individual objects '''
 
         
@@ -51,33 +44,17 @@ class GameEngine(EngineInterface):
         return [obj for obj in self.game_screen.objects if isinstance(obj, ColliderInterface)]
     
     @collidable_objects.setter
-    def collidable_objects(self, _): pass
-
-    def initialize_curses(self):
-        # initialize curses
-        self.stdscr = curses.initscr()
-
-        curses.curs_set(0)  # Hide cursor
-        curses.noecho()  # Don't echo keystrokes
-
-        self.stdscr.nodelay(True) # avoid waiting for key presses
-
-
-    def _config_window(self, height: int, width: int):
-        ''' Configures the CLI window '''
-        window_confid_command: str = f'mode con: cols={width} lines={height}'
-        os.system(window_confid_command)
-
-    def clear_screen(self):
-        self.stdscr.clear()
-        self.stdscr.refresh()
+    def collidable_objects(self, _):...
 
     def update(self, dt: int):...
-
+    
+    def get_memory_usage(self):
+        return self.process.memory_info().rss / 1024 /1024 # Memory usage
+    
     def run(self):
         
         # create game loop
-        while True:
+        while self.running:
             
             if self.debug_mode: 
                 time.sleep(1)
@@ -85,39 +62,40 @@ class GameEngine(EngineInterface):
                 print('================= FRAME ===========================')
                 print(f'FPS: {self.frame_time_keeper.fps} | DT: {self.frame_time_keeper.delta_time}ms')
                 print(f'OBJECTS: {len(self.game_screen.objects)}')
+                print(f'MEMORY USAGE: {self.get_memory_usage()} MB')
 
             # run delta time keeper
-            self.frame_time_keeper.run()
+            self.frame_time_keeper.run(self)
 
             # run garbage collector
-            self.garbage_collector.run()
+            self.garbage_collector.run(self)
 
             # get delta_time: milliseconds
             dt: float = self.frame_time_keeper.delta_time
             
-            # run EngineEffects of the game_screen meant from the engine
+            # run EngineEffects of the game_screen from the engine
             for effect in self.game_screen.screen_effects:
                 if effect.shouldRun(dt): effect.run(dt, self, None)
 
-            # UPDATE GAME_ENGINE OBJECTS
-            for object in self.game_screen.objects:
+            # UPDATE and RENDER GAME_SCREEN OBJECTS
+            for object in self.rendering_system.with_priority(self.game_screen.objects):
 
                 # run object effects
                 for effect in object.effects:
                     if effect.shouldRun(dt): effect.run(dt, self, object)
 
-                # Update Engine Objects
-                object.update(dt, self)
+                # Update Screen Objects
+                object.update(dt = dt, game = self)
 
                  # handle collisions if object has a collider
-                if isinstance(object, ColliderInterface): self.collision_system.run(object)
+                if isinstance(object, ColliderInterface): self.collision_system.run(object, self)
 
-                self.rendering_system.run(object) 
+                self.rendering_system.run(object, self) # render the object to screen 
 
-            # CALL GAME UPDATE FUNCTION
-            self.update(dt)      
-
-            if not self.running: break     
+            # CALL GAME_SCREEN UPDATE FUNCTION
+            self.game_screen.update(dt)      
+        
+        self.dispose() # release engine resources
 
 
 class Game(GameEngine, GameScreenInterface):
@@ -143,19 +121,19 @@ class Game(GameEngine, GameScreenInterface):
         return super().run()
 
     def onCreate(self):
-        print(f'screens 0ncreate {self.game_screens}')
-        # if this has game_screens len > 0
-        if len(self.game_screens) == 0: self.game_screen = self
+        # build border on the screen
+        
 
-        print(f'screens 0ncreate2 {self.game_screens}')
-        # switch to the first screen
-        self.switchToScreenByTag(self.game_screens[0].tag)
+        # if this has game_screens len > 0
+        if len(self.game_screens) == 0: 
+            self.game_screen = self
+        else:
+            print(f'screens 0ncreate2 {self.game_screens}')
+            # switch to the first screen
+            self.switchToScreenByTag(self.game_screens[0].tag)
 
     @override
     def update(self, dt: int):
-        if self.game_screen is not self:
-            self.game_screen.update(dt)
-
         return super().update(dt)
 
     def find_screen_by_tag(self, tag:str):
@@ -166,6 +144,7 @@ class Game(GameEngine, GameScreenInterface):
     def addScreen(self, screen: 'GameScreen'):
         
         self.game_screens.append(screen)
+        screen.game_instance = self
         screen.onCreate()
 
     def switchToScreenByTag(self, tag:str):

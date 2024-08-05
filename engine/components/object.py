@@ -1,12 +1,9 @@
-from typing import override
+from enum import Enum
+from typing import List, override
 
 from engine.components.drawing import Drawing
 
-from ..components.collider import CollisionType
-
-from .._interface import EngineInterface
-from .collider import Collider, ColliderFill
-from ._interfaces import ObjectInterface, DrawingInterface
+from ._interfaces import ColliderInterface, ObjectInterface, DrawingInterface
 
 from ..effects._interfaces import Effect
 
@@ -103,8 +100,8 @@ class Object(Panel, ObjectInterface):
         self.effects.append(effect)
 
     @override
-    def onMount(self):
-        return super().onMount()
+    def onMount(self, game = None, screen = None):
+        return super().onMount(game=game, screen=screen)
 
     @override
     def dispose(self): 
@@ -120,7 +117,7 @@ class Object(Panel, ObjectInterface):
         self.isGarbage = True
 
     @override
-    def update(self, dt: float, game: EngineInterface):
+    def update(self, dt: float = 0, game = None):
         '''
         The method is called every frame to update the object
         '''
@@ -131,7 +128,7 @@ class Object(Panel, ObjectInterface):
 
         super().update(dt, self.drawing)
 
-    def _update_pos_flags(self, game: EngineInterface):
+    def _update_pos_flags(self, game):
         # init all position flags to False
         self.past_left_extreme = False
         self.past_right_extreme = False
@@ -149,13 +146,13 @@ class Object(Panel, ObjectInterface):
             self.past_right_extreme = True
 
         # check against vertical extremes
-        if self.bounds.y_end == game.floor - 4: self.on_floor = True
+        if self.bounds.y_end == game.floor: self.on_floor = True
 
-        elif self.bounds.y_end > game.floor - 3: self.below_floor = True
+        elif self.bounds.y_end > game.floor: self.below_floor = True
         
-        elif self.bounds.y_start == game.roof + 1:  self.on_roof = True
+        elif self.bounds.y_start == game.roof:  self.on_roof = True
 
-        elif self.position.y < game.roof + 1: self.above_roof = True
+        elif self.bounds.y_start < game.roof: self.above_roof = True
 
         # check if the object is in view
         if (not self.past_left_extreme and not self.past_right_extreme) and (not self.above_roof and not self.below_floor):
@@ -180,7 +177,7 @@ class Object(Panel, ObjectInterface):
         return False
            
     @override
-    def render(self, game: EngineInterface):
+    def render(self, game):
         ''' 
         Renders the object to the screen 
         - It is called after the update object is called
@@ -198,12 +195,12 @@ class Object(Panel, ObjectInterface):
 
         # redraw the window if the panel_window needs to redraw
         # and the game is not in debug mode
-        print(f'--- PANEL SHOULDREDRAW {super().shouldRedraw()}')
+        # print(f'--- PANEL SHOULDREDRAW {super().shouldRedraw()}')
 
         if (super().shouldRedraw()): self.redrawWindow()
 
 
-    def _reconfigurePanelWindow(self, game: EngineInterface) -> bool:
+    def _reconfigurePanelWindow(self, game) -> bool:
         ''' Handles the change in the metrics of the 
          - Repositiong and resizing the object's panel_window
          - Since repositioning and resizing the panel_window is weirdly non-functional in curses,
@@ -245,6 +242,41 @@ class Object(Panel, ObjectInterface):
         # declare garbage if object is non-persistent and is out of view
         if not self.isPersistent and not self.in_view: self.isGarbage = True
 
+
+''' 
+            OBJECT WITH COLLISION MADE POSSIBLE 
+            
+ - Has a collider that takes collisions off other colliders 
+ 
+'''
+class ColliderFill(Enum):
+    FILLED = 1
+    HOLLOW = 2
+    
+class CollisionType(Enum):
+    ''''
+     Holds the different ways a collision can be interpreted
+    '''
+    START = 1
+    CONTINUING = 2
+    END = 3
+
+class CollisionData:
+    def __init__(self, object: ObjectInterface, collisionType: CollisionType):
+        self.object = object
+        self.collisionType = collisionType
+
+class Collider(ColliderInterface):
+    def __init__(self, colliderFill: ColliderFill):
+        
+        # a list of the objects the collier has collided with
+        self._collisions: List[CollisionData] = []
+
+        super().__init__(colliderFill)
+
+    def collide_with(self, other: ObjectInterface, collisionType: 'CollisionType'):
+        self._collisions.append(CollisionData(other, collisionType))
+
     
 ''''
 Object that can collide with other objects that have a collider.
@@ -281,8 +313,25 @@ class CollidableObject (Object, Collider):
         return super().collide_with(other, collisionType)
 
 
+
+''' 
+                            TEXT OBJECT 
+
+'''
+
 class TextBox(Object):
+    '''
+    Has only one item in self.drawing.state
+    '''
     def __init__(self, text:str, tags = [], x = 0, y = 0, priority= 0):
         drawing = Drawing(tag=text, drawingStates=[text])
 
         super().__init__(tags=tags, drawing=drawing, position=Vec2(x, y), priority=priority)
+
+    @property
+    def text(self) -> str:
+        return self.drawing.states[0]
+    
+    @text.setter
+    def text(self, new_text: str):
+        self.drawing.states[0] = new_text

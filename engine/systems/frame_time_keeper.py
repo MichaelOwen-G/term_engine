@@ -11,11 +11,13 @@ class FrameTimeKeeper(EngineSystem):
     delta_time: float = 0
 
     def __init__(self, game_engine):
+        
+        self.game_engine = game_engine
 
         self.dt_count_start: float = 0
         self.dt_count_end: float = 0
 
-        super().__init__(game_engine)
+        super().__init__()
 
     @property
     def fps(self):
@@ -34,7 +36,7 @@ class FrameTimeKeeper(EngineSystem):
         pass
 
 
-    def run(self):
+    def run(self, game_engine):
         '''
         Marks the start of another game loop
 

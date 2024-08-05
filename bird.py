@@ -1,14 +1,9 @@
 
-import curses
+import time
 from typing import override
-from engine._interface import EngineInterface
-from engine.components._interfaces import ObjectInterface
-from engine.components.collider import CollisionType
-from engine.components.drawing_stack import DrawingStack
-from engine.components.drawing import Drawing
-from engine.components.object import CollidableObject, Object
-from engine.effects.repeat_callbacks_effect import RepeatCallbacksEffect
-from engine.effects.repeat_effect import RepeatType
+from engine.components.drawing import Drawing, DrawingStack
+from engine.components.object import CollidableObject, CollisionType, Object
+from engine.effects.repeat_effect import RepeatCallbacksEffect, RepeatType
 from engine.metrics.duration import Duration, DurationMetrics
 from engine.metrics.vec2 import Vec2
 
@@ -21,6 +16,11 @@ class Bird(CollidableObject):
         self.dead = False
 
         self.key_presses =[]
+
+        self.points = 0
+        
+        self.flap_sound = None
+        self.hit_sound = None
 
         super().__init__(tags=tags, drawing=birdDrawing, position=Vec2(x, y), priority=priority, isPersistent = True)
 
@@ -42,26 +42,31 @@ class Bird(CollidableObject):
 
 
     @override
-    def onMount(self):
+    def onMount(self, **kwargs):
+        
+        game = kwargs.get('game', None)
+        
+        # load sound
+        self.flap_sound = game.load_sound('flap.mp3')
+        self.hit_sound = game.load_sound('hit.mp3')
         
         ''' ANIMATIONS '''
         # add the fly animation effect
         # define effect
         self.fly_effect = RepeatCallbacksEffect(
             repeatType=RepeatType.INDEFINETLY_EVERY_DURATION, 
-            duration=Duration(DurationMetrics.MILLISECONDS, 250),
+            duration=Duration(DurationMetrics.MILLISECONDS, 550),
             )
-
-        self.fly_effect.addCallback(self.animate_bird_flying)
+        self.fly_effect.addCallback(self.fly_anim)
         
         self.addEffect(self.fly_effect)
 
         self.gravity_effect = RepeatCallbacksEffect(
             repeatType=RepeatType.INDEFINETLY_EVERY_DURATION, 
-            duration=Duration(DurationMetrics.MILLISECONDS, 150),
+            duration=Duration(DurationMetrics.MILLISECONDS, 350),
             )
 
-        self.gravity_effect.addCallback(self.pull_down)
+        self.gravity_effect.addCallback(self.gravitize)
         
         self.addEffect(self.gravity_effect)
 
@@ -70,10 +75,8 @@ class Bird(CollidableObject):
         ''' ANIMATIONS '''
         return super().onMount()
     
-    def pull_down(self, **kwargs):
-        object = kwargs.get('object', None)
-
-        object.position.y += 1
+    def gravitize(self, **kwargs):
+        if not self.on_floor: self.position.y += 1
 
     
     def move_pipe(self, **kwargs):
@@ -82,45 +85,37 @@ class Bird(CollidableObject):
         object.position.x += 1
     
     # fly animation
-    def animate_bird_flying(self, **kwargs):
-        
+    def fly_anim(self, **kwargs):
         obj: Object = kwargs.get('object', None)
 
-        if obj == None:
-            raise TypeError('game or object arguments is Null')
-
         obj.drawing.next_state()
-
-    def update(self, dt: float, game: EngineInterface):
-
-        # key = game.stdscr.getch()
-
-        # self.handle_bird_movement(key)
-
-        self.gravity()
+        
+    @override
+    def update(self, **kwargs):
+        dt   = kwargs.get('dt', 0)
+        game = kwargs.get('game', None)
+        
+        key = game.stdscr.getch()
+        
+        if key == ord(' '): self.fly()
 
         super().update(dt, game)
+        
+    def fly(self):
+        self.pos.y -= 4
+        self.flap_sound.play()
 
-    def listen_for_key_press(self) -> bool: return True
+    @override
+    def listen_for_key_press(self) -> bool: 
+        return True
 
-
-    def collide_with(self, other: ObjectInterface, collisionType: CollisionType):
-        super().collide_with(other, collisionType)
-
+    @override
+    def collide_with(self, other, collisionType: CollisionType):
+        
+        self.hit_sound.play()
         self.dead = True
-
-    def handle_bird_movement(self, key):
-        if key == ord('w'):
-            self.pos.y -= 2
-
-    def gravity(self):...
-        # self.pos.y += 1
-
-
-
-
-
-
-
-
+        
+        super().collide_with(other, collisionType)
+        
+        time.sleep(1)
 

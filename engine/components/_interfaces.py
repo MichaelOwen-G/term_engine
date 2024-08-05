@@ -37,20 +37,16 @@ class ObjectInterface(ParsTypeSensitivity):
         self.isPersistent = isPersistent # if true, the object will not be disposed when out of view
 
     @abstractmethod
-    def onMount(self):
-        pass
+    def onMount(self, game = None, screen = None):...
 
     @abstractmethod
-    def update(self, dt: float, game):
-        pass
+    def update(self, dt: float, game):...
     
     @abstractmethod
-    def render(self):
-        pass
+    def render(self):...
     
     @abstractmethod
-    def dispose(self):
-        pass
+    def dispose(self):...
 
 
 class ColliderInterface(ParsTypeSensitivity):

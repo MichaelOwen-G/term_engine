@@ -1,23 +1,23 @@
 from typing import List
 
+from engine.components.object import ColliderFill, CollisionType
+
 from .._interface import EngineInterface
 
 from ..panel._interfaces import PanelInterface
 from ..components._interfaces import ColliderInterface
 from ._interfaces import ObjectSystem
 
-from ..components.collider import ColliderFill, CollisionType
-
 
 class CollisionSystem(ObjectSystem):
-    def __init__(self, game_engine: EngineInterface):
-        super().__init__(game_engine)
+    def __init__(self):
+        super().__init__()
 
-    def run(self, my_object: ColliderInterface):
+    def run(self, my_object: ColliderInterface, game_engine: EngineInterface):
         print(f'CHECKING COLLISIONS FOR: {my_object.tags}')
-        print(f'IN OBJECTS: {self.game_engine.collidable_objects}')
+        print(f'IN OBJECTS: {game_engine.collidable_objects}')
         
-        self.check_collisions(my_object, self.game_engine.collidable_objects)
+        self.check_collisions(my_object, game_engine.collidable_objects)
 
     def check_collisions(self, my_object: ColliderInterface, objects_can_collide: List[ColliderInterface]):
         ''' Checks the collisions of an object with all the other objects '''
@@ -98,3 +98,20 @@ class CollisionSystem(ObjectSystem):
 
         return collided
 
+'''
+# since the objects are quadilaterals, 
+        # a collison means that one or more of the four points of the smaller object,
+        # is within the bounds of the bigger object
+        
+        # determine the bigger and smaller object
+        # bigger object
+        bigger = colliderObject if colliderObject.bounds.bigger_than(other) else other
+        
+        # smaller object
+        smaller = other if bigger == colliderObject else other
+        
+        # using the smaller object,
+        # check whether its four points are within the bounds of the bigger object
+        
+        return True if smaller.bounds.is_within(bigger) else False
+'''

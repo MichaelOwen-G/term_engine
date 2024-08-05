@@ -1,9 +1,7 @@
 from typing import override
-from engine.components.drawing import Drawing
-from engine.components.drawing_stack import DrawingStack
+from engine.components.drawing import Drawing, DrawingStack
 from engine.components.object import CollidableObject
-from engine.effects.repeat_callbacks_effect import RepeatCallbacksEffect
-from engine.effects.repeat_effect import RepeatType
+from engine.effects.repeat_effect import RepeatCallbacksEffect, RepeatType
 from engine.metrics.duration import Duration, DurationMetrics
 from engine.metrics.vec2 import Vec2
 
@@ -14,7 +12,7 @@ pipe_trunk = ['  |      \  ']
 
 top_pipe_base = [
 '''
- _|      \_
+ _|      |_
 |__________|
 '''
 ]
@@ -75,9 +73,21 @@ class Pipe(CollidableObject):
 
     @override
     def update(self, dt: float, game):
-        return super().update(dt, game)
+        super().update(dt, game)
+
+        # find the player
+        bird_results = game.game_screen.find_objects_by_tag('bird')
+
+        if len(bird_results) == 0: return
+
+        bird: CollidableObject = bird_results[0]
+
+        # check if the player has past this
+        if (bird.bounds.x_start > self.bounds.x_end):
+            # add point to the player if yes
+            bird.points += 1
     
-    def onMount(self):
+    def onMount(self, **kwargs):
         self.x = self.pos.x
 
         ''' ANIMATIONS '''

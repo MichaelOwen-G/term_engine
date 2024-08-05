@@ -1,8 +1,7 @@
 from dataclasses import dataclass, field
 import numpy as np
 
-from ..components.drawing import Drawing
-from ..components.drawing_stack import DrawingStack
+from ..components.drawing import Drawing, DrawingStack
 
 from ..metrics.vec2 import Vec2
 
