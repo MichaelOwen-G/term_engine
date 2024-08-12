@@ -7,7 +7,7 @@ from typing import List
 
 import pygame
 
-from engine.components._interfaces import ObjectInterface
+from .components._interfaces import ObjectInterface
 
 class EngineInterface(ABC):
     '''

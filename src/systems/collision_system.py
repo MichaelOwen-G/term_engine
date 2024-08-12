@@ -1,6 +1,6 @@
 from typing import List
 
-from engine.components.object import ColliderFill, CollisionType
+from ..components.object import ColliderFill, CollisionType
 
 from .._interface import EngineInterface
 

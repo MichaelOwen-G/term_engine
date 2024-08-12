@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import List, override
 
-from engine.components.drawing import Drawing
+from ..components.drawing import Drawing
 
 from ._interfaces import ColliderInterface, ObjectInterface, DrawingInterface
 
