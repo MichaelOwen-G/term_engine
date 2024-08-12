@@ -7,7 +7,7 @@ from engine.effects.repeat_effect import RepeatCallbacksEffect, RepeatType
 from engine.metrics.duration import Duration, DurationMetrics
 from engine.metrics.vec2 import Vec2
 
-
+import example_package_gachanja_project
 class Bird(CollidableObject):
     def __init__(self, x = 0, y = 0, tags: list[str] = [], priority = 0):
        

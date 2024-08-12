@@ -1,6 +1,3 @@
-
-import curses.panel
-from ..components._interfaces import ObjectInterface
 from ._interfaces import ObjectSystem
 from ..panel._interfaces import PanelInterface
 
