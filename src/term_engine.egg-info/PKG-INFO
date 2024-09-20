@@ -1,0 +1,27 @@
+Metadata-Version: 2.1
+Name: term_engine
+Version: 0.0.1
+Summary: A terminal-based game engine
+Author-email: "Michael O. Gachanja " <mikalowen.g@gmail.com>
+Project-URL: Homepage, https://github.com/MichaelOwen-G/term_engine
+Project-URL: Issues, https://github.com/pypa/sampleproject/issues
+Project-URL: Example, https://github.com/MichaelOwen-G/flappy_bird
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Topic :: Games/Entertainment
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: numpy==2.0.1
+Requires-Dist: psutil==6.0.0
+Requires-Dist: pygame==2.6.0
+Requires-Dist: windows-curses==2.3.3
+
+# term_engine Package
+
+This is a simple example package. You can use
+[GitHub-flavored Markdown](https://guides.github.com/features/mastering-markdown/)
+to write your content.
+
+pypi-AgENdGVzdC5weXBpLm9yZwIkNmFjYjU3YTgtMTlhYi00NWQwLTg5MDEtNTRjYjM1NzE4YTljAAIqWzMsImM1NzMzMmZjLTcyOTctNGRlMy05N2U2LTRiYThhYTJiMjY3OSJdAAAGII4rCtnmssY3GnoCc4oSBPurGTsnLPhnZVMW8rfrZjNK

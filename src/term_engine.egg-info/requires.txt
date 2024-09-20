@@ -1,0 +1,4 @@
+numpy==2.0.1
+psutil==6.0.0
+pygame==2.6.0
+windows-curses==2.3.3

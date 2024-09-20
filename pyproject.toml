@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "term_engine"
+version = "0.0.1"
+authors = [
+  { name="Michael O. Gachanja ", email="mikalowen.g@gmail.com" },
+]
+description = "A terminal-based game engine"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "numpy == 2.0.1",
+    "psutil == 6.0.0",
+    "pygame == 2.6.0",
+    "windows-curses == 2.3.3",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Topic :: Games/Entertainment"
+]
+
+[project.urls]
+Homepage = "https://github.com/MichaelOwen-G/term_engine"
+Issues = "https://github.com/pypa/sampleproject/issues"
+Example = "https://github.com/MichaelOwen-G/flappy_bird"
